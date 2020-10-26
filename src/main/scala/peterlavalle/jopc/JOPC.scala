@@ -2,10 +2,28 @@ package peterlavalle.jopc
 
 import org.json.{JSONArray, JSONObject}
 
+import scala.collection.convert.ImplicitConversions.`iterable AsScalaIterable`
+
 object JOPC extends App {
 
 	import Result._
 
+	sealed trait ObjectParser[T] extends ValueParser[T] {
+		override val parseValue = {
+			case json: JSONObject =>
+				apply(json)
+		}
+
+		final def apply(json: JSONObject): Result[T] =
+			parse(Set(), json)
+
+		private[JOPC] def parse(seen: Set[String], json: JSONObject): Result[T]
+	}
+
+	implicit class ValueRefParser[V <: AnyRef](p: ValueParser[V]) {
+		def ? : ValueParser[V] =
+			sys.error("add the/a nullable parser")
+	}
 
 	trait ValueParser[T] {
 
@@ -27,16 +45,11 @@ object JOPC extends App {
 		def |[O, R](r: ValueParser[R]): ValueParser[O] =
 			???
 
-		def * : ValueParser[List[T]] = this * 0
+		def * : ArrayParser[T] = this * 0
 
-		def *(max: Int): ValueParser[List[T]] = this * (0 -> max)
+		def *(max: Int): ArrayParser[T] = this * (0 -> max)
 
 		def *(minMax: (Int, Int)): ArrayParser[T] = ArrayParser(minMax._1, minMax._2, this)
-	}
-
-	implicit class ValueRefParser[V <: AnyRef](p: ValueParser[V]) {
-		def ? : ValueParser[V] =
-			sys.error("add the/a nullable parser")
 	}
 
 	trait FieldParser[T] {
@@ -49,25 +62,29 @@ object JOPC extends App {
 		def flatMap[O](f: T => ObjectParser[O]): ObjectParser[O]
 	}
 
-	trait ObjectParser[T] extends ValueParser[T] {
-		override val parseValue = {
-			case json: JSONObject =>
-				apply(json)
+	case class ArrayParser[T] private(min: Int, max: Int, value: ValueParser[T]) extends ValueParser[List[T]] {
+		def apply(json: JSONArray): Result[List[T]] = {
+			(0 until json.length())
+				.toStream
+				.map(json.get)
+				.foldLeft(Result(List[T]())) {
+					case (left, json) =>
+						left.flatMap {
+							list: List[T] =>
+								value.parseValue(json) match {
+									case Result(value) =>
+										Result(list :+ value)
+									case failure =>
+										failure.asInstanceOf
+								}
+						}
+				}
 		}
 
-		final def apply(json: JSONObject): Result[T] =
-			parse(Set(), json)
-
-		def parse(seen: Set[String], json: JSONObject): Result[T]
-	}
-
-	case class ArrayParser[T] private(min: Int, max: Int, sub: ValueParser[T]) extends ValueParser[List[T]] {
-		def apply(json: JSONArray): Either[Exception, T] = {
-			???
+		def parseValue = {
+			case null =>
+				???
 		}
-
-		def parseValue =
-			???
 	}
 
 	case class StringFieldParser[T](key: String, value: ValueParser[T]) extends FieldParser[T] {
@@ -77,13 +94,17 @@ object JOPC extends App {
 		override def flatMap[O](f: T => ObjectParser[O]): ObjectParser[O] = Bind(f)
 
 		case class Pure[O](f: T => O) extends ObjectParser[O] {
-			override def parse(seen: Set[String], json: JSONObject): Result[O] =
+			override protected[JOPC] def parse(seen: Set[String], json: JSONObject): Result[O] = {
+				require(json.keySet().toSet.forall(seen + key))
 				value.parseValue(json.get(key)).map(f)
+			}
 		}
 
 		case class Bind[O](f: T => ObjectParser[O]) extends ObjectParser[O] {
-			override def parse(seen: Set[String], json: JSONObject): Result[O] =
+			override protected[JOPC] def parse(seen: Set[String], json: JSONObject): Result[O] = {
+				require(!seen(key))
 				value.parseValue(json.get(key)).map(f).flatMap((_: ObjectParser[O]) parse(seen + key, json))
+			}
 		}
 
 	}
@@ -97,7 +118,10 @@ object JOPC extends App {
 					if (toDouble.toString == value)
 						Right(toDouble)
 					else
-						Failure(s"string2double unstable `$value`")
+						UnstableAtomicValue(
+							value,
+							"double"
+						)
 			}
 		val AtomicFloat: ValueParser[Float] = AtomicDouble !! ((_: Double).toFloat)
 		val AtomicBoolean: ValueParser[Boolean] =
@@ -112,7 +136,7 @@ object JOPC extends App {
 
 		case object AtomicString extends ValueParser[String] {
 			val parseValue = {
-				case string: String => Right(string)
+				case string: String => Result(string)
 			}
 		}
 
@@ -123,7 +147,11 @@ object JOPC extends App {
 					if (toInt.toString == value)
 						Right(toInt)
 					else
-						Failure(s"string2int unstable `$value`")
+						UnstableAtomicValue(
+							value,
+							"int"
+						)
+
 				case int: java.lang.Integer =>
 					val i: Int = int
 					Right(i)

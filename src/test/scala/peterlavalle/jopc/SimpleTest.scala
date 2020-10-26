@@ -20,7 +20,7 @@ class SimpleTest extends AnyFunSuite {
 		val actual: Result[Foo] = parser(new JSONObject().put("hey", "you").put("you", 1287))
 
 		assert(
-			actual == Result.Success(Foo("you", 1287))
+			actual == Result(Foo("you", 1287))
 		)
 	}
 }
