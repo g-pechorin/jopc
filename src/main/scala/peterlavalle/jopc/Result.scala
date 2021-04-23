@@ -1,5 +1,7 @@
 package peterlavalle.jopc
 
+import scala.language.implicitConversions
+
 
 object Result {
 
@@ -24,6 +26,8 @@ object Result {
 					value
 				case Failure(exception: Exception) =>
 					throw exception
+				case _ =>
+					sys.error("what?")
 			}
 
 		def orElse[E >: T, Q <: E](otherwise: => Q): Result[E] =

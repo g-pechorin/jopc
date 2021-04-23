@@ -59,10 +59,20 @@ trait include extends Coder {
 					.position(oldData.length)
 			}
 		}
+
+		def putUnsignedByte(value: Int): ByteBuffer = {
+			require(0 <= value && value <= 255)
+			self.put(
+				(value & 0xff).toByte
+			)
+		}
+
+		def getUnsignedByte(): Int = {
+			val value: Int = self.get() & 0xFF
+			require(0 <= value && value <= 255)
+			value
+		}
 	}
-
-
-	import scala.collection.JavaConversions._
 
 
 	private final def deepEq(o: => (JSONObject, JSONObject), a: => (JSONArray, JSONArray), v: => (String, String)): Boolean = (o) match {
@@ -79,12 +89,6 @@ trait include extends Coder {
 	}
 
 	implicit class PrimpJSONArray(self: JSONArray) {
-
-		def ![Q](valueParser: member[Q]): List[Q] =
-			(0 until self.size)
-				.map(valueParser.getJSON(self, _))
-				.toList
-
 
 		def toStreamOf[T](map: (JSONArray, Int) => T): Stream[T] = {
 			(0 until self.length())
@@ -110,10 +114,10 @@ trait include extends Coder {
 	}
 
 	implicit class PrimpJSONObject(self: JSONObject) {
+
 		def deepEqu(them: JSONObject): Boolean = {
-			import scala.collection.JavaConversions._
-			val selfKeys: List[String] = self.keySet().toList.sorted
-			val themKeys: List[String] = them.keySet().toList.sorted
+			val selfKeys: List[String] = self.toListOfKeys
+			val themKeys: List[String] = them.toListOfKeys
 			selfKeys.foldLeft(selfKeys == themKeys) {
 				case (false, _) => false
 				case (_, next) =>
@@ -124,6 +128,10 @@ trait include extends Coder {
 					)
 			}
 		}
+
+		def toListOfKeys: List[String] = toSetOfKeys.toList.sorted
+
+		def toSetOfKeys: Set[String] = self.keySet().toArray.toList.map((_: AnyRef).asInstanceOf[String]).toSet
 
 		def set(key: String): set =
 			new set {
@@ -140,7 +148,10 @@ trait include extends Coder {
 					}
 				}
 
-				private def load: Set[String] = data.toList.map((_: AnyRef).toString).toSet
+				private def load: Set[String] =
+					data
+						.toStreamOf((_: JSONArray) getString (_: Int))
+						.toSet
 
 				private def save(v: Iterable[String]): Unit = {
 					val full: List[String] =
@@ -148,7 +159,7 @@ trait include extends Coder {
 							.toList
 							.sorted
 
-					while (data.size > full.size)
+					while (data.length() > full.size)
 						data.remove(0)
 
 					full
@@ -214,5 +225,6 @@ trait include extends Coder {
 		}
 
 	}
+
 
 }
