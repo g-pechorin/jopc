@@ -1,0 +1,4 @@
+{ver:1}
+steps:
+	- (sbt) test
+hub: git@github.com:g-pechorin/jopc.git

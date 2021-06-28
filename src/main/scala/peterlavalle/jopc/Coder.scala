@@ -13,7 +13,7 @@ object Coder extends Coder {
 			} catch {
 				case e: JSONException =>
 					???
-				case e =>
+				case e: Throwable =>
 
 					sys.error("wrap/handle")
 
