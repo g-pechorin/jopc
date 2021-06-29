@@ -1,1 +1,15 @@
-{"date":"2021-03-03 17:54:02 +0000","node":"b568fac7c14ce26dc6267e8a1d78155c8a270ae1","user":"Peter"}
+{
+ "bookmarks": [],
+ "date": [
+  1624994944,
+  -3600
+ ],
+ "phase": "draft",
+ "node": "075a8ee72eaf1af770db76fa63bd2bc06100fc50",
+ "rev": 11873,
+ "branch": "pure-generator",
+ "user": "Peter LaValle <peter.lavalle@gmail.com>",
+ "desc": "fixxed",
+ "parents": ["e698dc429f424574b9e2623aca8a88bd8521b2f2"],
+ "tags": ["tip"]
+}
