@@ -1,11 +1,10 @@
 package peterlavalle.jopc
 
-import java.io.{File, FileWriter, Writer}
+import java.io.{File, FileWriter, InputStream, Writer}
 
 import org.json.{JSONArray, JSONObject}
 
 import scala.annotation.tailrec
-import scala.collection.immutable.Stream.Empty
 import scala.io.{BufferedSource, Source}
 import scala.util.matching.Regex
 
@@ -145,6 +144,18 @@ object YAON {
 		}
 	}
 
+	def apply(data: InputStream): (String, JSONObject) =
+		try {
+			val source: BufferedSource = Source.fromInputStream(data)
+			try {
+				YAON(source.mkString)
+			} finally {
+				source.close()
+			}
+		} finally {
+			data.close()
+		}
+
 	def apply(text: String): (String, JSONObject) = {
 		YAON(text.split("[\r \t]*\n"))
 	}
@@ -213,7 +224,7 @@ object YAON {
 		}
 
 		data.dropWhile((_: String).trim.isEmpty).toStream match {
-			case Empty =>
+			case Stream() =>
 				(null, new JSONObject())
 			case tag #:: data =>
 				tag -> load(new JSONObject())(data
@@ -231,8 +242,9 @@ object YAON {
 
 			if (line.startsWith("\""))
 				line
-			else
-				'"' + line + '"'
+			else {
+				"\"" + line + "\""
+			}
 		}
 
 		if (!(line.startsWith("\"") && line.endsWith("\"")))

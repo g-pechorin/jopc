@@ -64,19 +64,18 @@ sealed trait member[T] extends member.atomic[T] {
 
 			override def deJSON(json: JSONObject): O =
 				act(from.deJSON(json))
-					.right.map((_: member[O]).deJSON(json))
+					.map((_: member[O]).deJSON(json))
 					.merge
 
 			override def decode(bytes: ByteBuffer): O =
 				act(from.decode(bytes))
-					.right.map((_: member[O]).decode(bytes))
+					.map((_: member[O]).decode(bytes))
 					.merge
 
 			override def encode(self: O): ByteBuffer = ???
 
 			override def generate(random: Random): O =
 				act(from.generate(random))
-					.right
 					.map(
 						(_: member[O]).generate(random)
 					)
@@ -204,7 +203,7 @@ object member {
 					Stream.continually {
 						implicitly[atomic[V]].generate(random)
 					}.take(len)
-				}.right.map(_.generate(random))
+				}.map(_.generate(random))
 					.merge
 			}
 		}
@@ -220,7 +219,7 @@ object member {
 
 			override def generate(random: Random): O =
 				act(left.generate(random))
-					.right.map((_: member[O]).generate(random))
+					.map((_: member[O]).generate(random))
 					.merge
 		}
 
@@ -241,6 +240,8 @@ object member {
 		override def getJSON(json: JSONObject, key: String): Char =
 			json.getString(key).toList match {
 				case List(one) => one
+				case _ =>
+					sys.error("what?")
 			}
 
 		override def setJSON(json: JSONObject, key: String, value: Char): Unit =
@@ -468,7 +469,7 @@ object member {
 	 * @tparam V the field type
 	 * @return a thing to build a member
 	 */
-	@deprecated
+	//	@deprecated
 	def apply[O: ClassTag, V: ClassTag](key: String, get: O => Iterable[V], counts: Iterable[Int])(implicit method: atomic[V]): TLink[O, Stream[V]] = new TLink[O, Stream[V]] {
 		override def map(act: Stream[V] => O): member[O] =
 			new member[O] {

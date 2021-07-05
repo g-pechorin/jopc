@@ -1,5 +1,7 @@
 package peterlavalle.jopc
 
+import java.io.InputStream
+
 import org.json.JSONObject
 import org.scalatest.funsuite.AnyFunSuite
 
@@ -7,26 +9,39 @@ import scala.io.{BufferedSource, Source}
 
 class YAONTest extends AnyFunSuite {
 
-	lazy val yaonString: String = {
+	def testResource[O](suffix: String)(act: BufferedSource => O): O = {
+
+		val name: String = getClass.getSimpleName + suffix
+		val stream: InputStream = getClass.getResourceAsStream(name)
+
+		require(null != stream, s"no stream from resource $name")
+
 		val source: BufferedSource =
 			Source
 				.fromInputStream(
-					getClass
-						.getResourceAsStream(getClass.getSimpleName + ".frame.yaon")
+					stream
 				)
+
 		try {
-			source.mkString
+			act(source)
 		} finally {
 			source.close()
+		}
+	}
+
+	lazy val yaonString: String = {
+		testResource(".frame.yaon") {
+			(_: BufferedSource).mkString
 		}
 	}
 
 	test("from text") {
 
 
-		// sanity check (remember - these puppers don't do equality
+		// sanity check (remember - these puppers don't do equality)
 		assert(
-			js.toString == new JSONObject(js.toString).toString
+			js.toString == new JSONObject(js.toString).toString,
+			"sanity check (remember - these puppers don't do equality)"
 		)
 
 
@@ -51,20 +66,11 @@ class YAONTest extends AnyFunSuite {
 			.put("foo", -9)
 			.put("bar", "fourteen")
 
-	def jsonData =
-		new JSONObject({
-			val source: BufferedSource =
-				Source
-					.fromInputStream(
-						getClass
-							.getResourceAsStream(getClass.getSimpleName + ".frame.json")
-					)
-			try {
-				source.mkString
-			} finally {
-				source.close()
-			}
-		})
+	def jsonData: JSONObject =
+		testResource(".frame.json")(
+			(src: BufferedSource) =>
+				new JSONObject(src.mkString)
+		)
 
 	test("parse resource") {
 
