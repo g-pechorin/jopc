@@ -1,14 +1,13 @@
 
+
 parser combinatorics, but, for JSON instead of text
 
 right now ... this is [just a single unit test showing the concept](src/test/scala/peterlavalle/jopc/SimpleTest.scala)
-
 
 ```sbt
 resolvers += "jitpack" at "https://jitpack.io"
 libraryDependencies += "com.github.g-pechorin" % "jopc" % "master"
 ```
-
 
 ... now includes "YAON" "Coder" and "JSONFile"
 
