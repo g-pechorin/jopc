@@ -1,31 +1,4 @@
-
-
-parser combinatorics, but, for JSON instead of text
-
-right now ... this is [just a single unit test showing the concept](src/test/scala/peterlavalle/jopc/SimpleTest.scala)
-
-```sbt
-resolvers += "jitpack" at "https://jitpack.io"
-libraryDependencies += "com.github.g-pechorin" % "jopc" % "master"
-```
-
-... now includes "YAON" "Coder" and "JSONFile"
-
-## JSONFile
-
-synchronized "query based" interface around JSONObject and File
-
-please don't pass the JSONObject out of the `def apply[O](act: JSONObject => O): O` method
-
-do all changes in the/a `def apply[O](act: JSONObject => O): O` method and they're written to disk!
-
-## Coder
-
-it's an ad-hoc encoder/decoder setup
-
-can/should work fine with JOPC constructs
-
-... i should update it to use JOPC's error system
+just a pile of junk to edit JSON
 
 ## YAON (Yet Another Object Notation)
 
