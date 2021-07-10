@@ -144,17 +144,26 @@ object YAON {
 		}
 	}
 
-	def apply(data: InputStream): (String, JSONObject) =
-		try {
-			val source: BufferedSource = Source.fromInputStream(data)
+	def parse(file: File): Result =
+		parse {
+			val source = Source.fromFile(file)
 			try {
-				YAON(source.mkString)
+				source.mkString
 			} finally {
 				source.close()
 			}
-		} finally {
-			data.close()
 		}
+
+	def parse(text: String): Result = {
+		if (text.trim.startsWith("{") && text.trim.endsWith("}"))
+			JSONData {
+				new JSONObject(text)
+			}
+		else {
+			val (lead, data) = YAON(text)
+			YAONData(lead, data)
+		}
+	}
 
 	def apply(text: String): (String, JSONObject) = {
 		YAON(text.split("[\r \t]*\n"))
@@ -257,4 +266,22 @@ object YAON {
 		new JSONObject(str)
 			.getString("s")
 	}
+
+	def apply(data: InputStream): (String, JSONObject) =
+		try {
+			val source: BufferedSource = Source.fromInputStream(data)
+			try {
+				YAON(source.mkString)
+			} finally {
+				source.close()
+			}
+		} finally {
+			data.close()
+		}
+
+	sealed trait Result
+
+	case class YAONData(tag: String, json: JSONObject) extends Result
+
+	case class JSONData(json: JSONObject) extends Result
 }

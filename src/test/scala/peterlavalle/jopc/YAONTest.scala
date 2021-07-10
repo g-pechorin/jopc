@@ -9,31 +9,18 @@ import scala.io.{BufferedSource, Source}
 
 class YAONTest extends AnyFunSuite {
 
-	def testResource[O](suffix: String)(act: BufferedSource => O): O = {
-
-		val name: String = getClass.getSimpleName + suffix
-		val stream: InputStream = getClass.getResourceAsStream(name)
-
-		require(null != stream, s"no stream from resource $name")
-
-		val source: BufferedSource =
-			Source
-				.fromInputStream(
-					stream
-				)
-
-		try {
-			act(source)
-		} finally {
-			source.close()
-		}
-	}
-
 	lazy val yaonString: String = {
 		testResource(".frame.yaon") {
 			(_: BufferedSource).mkString
 		}
 	}
+
+	def ya =
+		"""
+			|thing
+			|bar: fourteen
+			|foo: -9
+			""".stripMargin
 
 	test("from text") {
 
@@ -54,13 +41,6 @@ class YAONTest extends AnyFunSuite {
 		assert(YAON("thing", js) == YAON("thing", json))
 	}
 
-	def ya =
-		"""
-			|thing
-			|bar: fourteen
-			|foo: -9
-			""".stripMargin
-
 	def js =
 		new JSONObject()
 			.put("foo", -9)
@@ -71,6 +51,26 @@ class YAONTest extends AnyFunSuite {
 			(src: BufferedSource) =>
 				new JSONObject(src.mkString)
 		)
+
+	def testResource[O](suffix: String)(act: BufferedSource => O): O = {
+
+		val name: String = getClass.getSimpleName + suffix
+		val stream: InputStream = getClass.getResourceAsStream(name)
+
+		require(null != stream, s"no stream from resource $name")
+
+		val source: BufferedSource =
+			Source
+				.fromInputStream(
+					stream
+				)
+
+		try {
+			act(source)
+		} finally {
+			source.close()
+		}
+	}
 
 	test("parse resource") {
 
