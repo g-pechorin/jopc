@@ -1,15 +1,15 @@
 g4tput
 bookmarks:
-branch: default
+branch: jitlab
 date:
-	-1625912417
+	-1626021638
 	--3600
-desc: "cleanup before push"
-node: 11de4ef6b2993e108003b4da8d63c345b652f4ec
+desc: "should do the/a jitlab switch - let's test!"
+node: 30845515f61fd615638fcb573ab358f76dac415b
 parents:
-	-e0d4a7e2920f58f1e8b8752b157c04e276b61015
-phase: public
-rev: 11989
+	-d2e97a58a8e3d29a355d90b73e19a625cb914a43
+phase: draft
+rev: 11998
 tags:
 	-tip
 user: "Peter LaValle <peter.lavalle@gmail.com>"
